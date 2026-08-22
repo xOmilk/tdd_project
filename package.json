@@ -1,0 +1,32 @@
+{
+  "name": "tdd_project",
+  "version": "1.0.0",
+  "description": "Projeto de Qualidade de Software aplicando o TDD",
+  "main": "index.js",
+  "scripts": {
+    "test": "jest"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/xOmilk/tdd_project.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/xOmilk/tdd_project/issues"
+  },
+  "homepage": "https://github.com/xOmilk/tdd_project#readme",
+  "dependencies": {
+    "@inquirer/prompts": "8.6.0"
+  },
+  "devDependencies": {
+    "@types/jest": "^30.0.0",
+    "@types/node": "26.2.0",
+    "jest": "^30.4.2",
+    "ts-jest": "^29.4.12",
+    "tsx": "4.23.12",
+    "typescript": "6.0.3"
+  }
+}
