@@ -1,22 +1,30 @@
 import * as fs from "node:fs/promises";
 
-const FILE_NAME = "database.json";
+class FileService {
+  static FILE_NAME = "database.json";
 
-class File {
-  async init() {
+  static async init() {
     if (await this.fileExists()) {
-      const content = await fs.readFile(FILE_NAME, "utf-8");
+      const content = await fs.readFile(this.FILE_NAME, "utf-8");
       return JSON.parse(content);
     }
 
-    await fs.writeFile(FILE_NAME, JSON.stringify([]));
+    await fs.writeFile(this.FILE_NAME, JSON.stringify([]));
 
     return [];
   }
 
-  private async fileExists() {
+  static async delete() {
     try {
-      await fs.access(FILE_NAME);
+      await fs.unlink(this.FILE_NAME);
+    } catch (error) {
+      throw new Error("Erro ao deletar arquivo");
+    }
+  }
+
+  private static async fileExists() {
+    try {
+      await fs.access(this.FILE_NAME);
       return true;
     } catch (error) {
       return false;
@@ -24,4 +32,4 @@ class File {
   }
 }
 
-module.exports = File;
+module.exports = FileService;

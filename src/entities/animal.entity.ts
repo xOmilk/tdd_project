@@ -1,3 +1,8 @@
-class Animal {}
+interface Animal {
+  name: string;
+  species: string;
+  breed: string;
+  birthDate: Date;
+}
 
-module.exports = Animal;
+export = Animal;

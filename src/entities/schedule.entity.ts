@@ -1,3 +1,8 @@
-class Schedule {}
+import ScheduleType from "../types/schedule-type.type";
 
-module.exports = Schedule;
+interface Schedule {
+  type: ScheduleType;
+  value: number;
+}
+
+export = Schedule;

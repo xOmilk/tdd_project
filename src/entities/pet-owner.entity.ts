@@ -1,3 +1,3 @@
-class PetOwner {}
+interface PetOwner {}
 
-module.exports = PetOwner;
+export = PetOwner;

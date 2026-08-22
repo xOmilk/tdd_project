@@ -1,24 +1,25 @@
 import { input, confirm, select } from "@inquirer/prompts";
 
 async function main() {
-  const name = await input({
-    message: "What's your name?",
-  });
+  let choice:
+    | "register-pet"
+    | "list-pets"
+    | "schedule-consultation"
+    | "list-consultations"
+    | "exit" = "register-pet";
 
-  const language = await select({
-    message: "What's your favorite language?",
-    choices: [
-      { name: "TypeScript", value: "typescript" },
-      { name: "Python", value: "python" },
-      { name: "Rust", value: "rust" },
-    ],
-  });
-
-  const happy = await confirm({
-    message: `Are you happy with ${language}?`,
-  });
-
-  console.log(`Hello ${name}!`);
+  while (choice != "exit") {
+    choice = await select({
+      message: "O que deseja fazer?",
+      choices: [
+        { name: "Registrar Pet", value: "register-pet" },
+        { name: "Listar Pets", value: "list-pets" },
+        { name: "Agendar Consulta", value: "schedule-consultation" },
+        { name: "Listar Consultas", value: "list-consultations" },
+        { name: "Sair", value: "exit" },
+      ],
+    });
+  }
 }
 
 main();
