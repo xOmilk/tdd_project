@@ -4,6 +4,7 @@
   "description": "Projeto de Qualidade de Software aplicando o TDD",
   "main": "index.js",
   "scripts": {
+    "dev": "tsx src/main.ts",
     "test": "jest"
   },
   "repository": {
