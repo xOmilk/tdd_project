@@ -73,10 +73,12 @@ beforeEach(() => {
   jest.clearAllMocks();
 });
 
+// main.ts
 test("A suíte principal está configurada", () => {
   expect(true).toBe(true);
 });
 
+// utils/index.ts
 test("Validar data futura no utilitário", () => {
   const result = parseFutureDate("2099-12-31 10:30");
 
@@ -234,6 +236,7 @@ test("Listar consultas registradas pelo utilitário", () => {
   consoleSpy.mockRestore();
 });
 
+// pet-owner.service.ts
 test("Registrar novo responsável", async () => {
   const petOwner = createPetOwner();
   const { memoryDb, petOwnerService } = createService();
@@ -291,6 +294,7 @@ test("Calcular total gasto pelo responsável", async () => {
   await expect(petOwnerService.getTotalSpent(petOwner)).resolves.toBe(280);
 });
 
+// schedule.service.ts
 test("Calcular valor da consulta de rotina", async () => {
   const animal = createAnimal();
   const { service } = createService();
@@ -415,6 +419,7 @@ test("Identificar retorno dentro do período", async () => {
   ).toBe(false);
 });
 
+// animal.service.ts
 test("Registrar vários animais em lista", async () => {
   const animals = [createAnimal("A"), createAnimal("B")];
   const { memoryDb, animalService } = createService();
