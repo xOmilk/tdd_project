@@ -1,10 +1,24 @@
 import Animal from "../src/entities/animal.entity";
 import PetOwner from "../src/entities/pet-owner.entity";
 import Schedule from "../src/entities/schedule.entity";
+import { confirm, input, select } from "@inquirer/prompts";
+import {
+  listConsultations,
+  listPets,
+  parseFutureDate,
+  registerPet,
+  scheduleConsultation,
+} from "../src/utils";
 const MemoryDb = require("../src/db/memory.db");
 const ScheduleService = require("../src/services/schedule.service");
 const AnimalService = require("../src/services/animal.service");
 const PetOwnerService = require("../src/services/pet-owner.service");
+
+jest.mock("@inquirer/prompts", () => ({
+  confirm: jest.fn(),
+  input: jest.fn(),
+  select: jest.fn(),
+}));
 
 function createAnimal(name = "Caramelo"): Animal {
   const petOwner: PetOwner = {
@@ -55,8 +69,169 @@ function addPastSchedule(animal: Animal, value = 100): void {
   animal.schedules.push(schedule);
 }
 
+beforeEach(() => {
+  jest.clearAllMocks();
+});
+
 test("A suíte principal está configurada", () => {
   expect(true).toBe(true);
+});
+
+test("Validar data futura no utilitário", () => {
+  const result = parseFutureDate("2099-12-31 10:30");
+
+  expect(result).toBeInstanceOf(Date);
+  expect((result as Date).getFullYear()).toBe(2099);
+});
+
+test("Rejeitar data inválida ou passada no utilitário", () => {
+  expect(parseFutureDate("data inválida")).toBe(
+    "Informe a data no formato AAAA-MM-DD HH:mm.",
+  );
+  expect(parseFutureDate("2020-01-01 10:30")).toBe(
+    "Informe uma data e hora futuras válidas.",
+  );
+});
+
+test("Registrar pet pelo utilitário", async () => {
+  const { memoryDb, animalService, petOwnerService } = createService();
+  (input as jest.Mock)
+    .mockResolvedValueOnce("novo@example.com")
+    .mockResolvedValueOnce("Novo responsável")
+    .mockResolvedValueOnce("75 99900-0000")
+    .mockResolvedValueOnce("Rex")
+    .mockResolvedValueOnce("Cachorro")
+    .mockResolvedValueOnce("SRD")
+    .mockResolvedValueOnce("2020-01-01");
+
+  await registerPet(animalService, petOwnerService);
+
+  expect(memoryDb.animals).toHaveLength(1);
+  expect(memoryDb.animals[0].name).toBe("Rex");
+  expect(memoryDb.animals[0].petOwner.email).toBe("novo@example.com");
+});
+
+test("Registrar outro pet para responsável existente", async () => {
+  const petOwner = createPetOwner();
+  const { memoryDb, animalService, petOwnerService } = createService();
+  await petOwnerService.registerPetOwner(petOwner);
+  (input as jest.Mock)
+    .mockResolvedValueOnce(petOwner.email)
+    .mockResolvedValueOnce("Luna")
+    .mockResolvedValueOnce("Gato")
+    .mockResolvedValueOnce("SRD")
+    .mockResolvedValueOnce("2021-02-03");
+
+  await registerPet(animalService, petOwnerService);
+
+  expect(memoryDb.petOwners).toHaveLength(1);
+  expect(petOwner.animals[0].name).toBe("Luna");
+});
+
+test("Listar pets cadastrados pelo utilitário", async () => {
+  const animal = createAnimal();
+  const { memoryDb, animalService } = createService();
+  memoryDb.animals.push(animal);
+  const consoleSpy = jest.spyOn(console, "log").mockImplementation();
+
+  await listPets(animalService, memoryDb);
+
+  expect(consoleSpy).toHaveBeenCalledWith(
+    expect.stringContaining("Caramelo | Cachorro | SRD"),
+  );
+  consoleSpy.mockRestore();
+});
+
+test("Agendar consulta futura pelo utilitário", async () => {
+  const animal = createAnimal();
+  const { memoryDb, service } = createService();
+  memoryDb.animals.push(animal);
+  (select as jest.Mock)
+    .mockResolvedValueOnce(animal)
+    .mockResolvedValueOnce("consulta de rotina");
+  (confirm as jest.Mock).mockResolvedValueOnce(false);
+  (input as jest.Mock).mockResolvedValueOnce("2099-12-31 10:30");
+
+  await scheduleConsultation(memoryDb, service);
+
+  expect(memoryDb.schedules).toHaveLength(1);
+  expect(memoryDb.schedules[0].date).toEqual(new Date(2099, 11, 31, 10, 30));
+});
+
+test("Agendar consulta com procedimento adicional", async () => {
+  const animal = createAnimal();
+  const { memoryDb, service } = createService();
+  memoryDb.animals.push(animal);
+  (select as jest.Mock)
+    .mockResolvedValueOnce(animal)
+    .mockResolvedValueOnce("consulta de rotina");
+  (confirm as jest.Mock).mockResolvedValueOnce(true);
+  (input as jest.Mock)
+    .mockResolvedValueOnce("25.50")
+    .mockResolvedValueOnce("2099-12-31 10:30");
+
+  await scheduleConsultation(memoryDb, service);
+
+  expect(memoryDb.schedules[0].value).toBe(125.5);
+});
+
+test("Não agendar consulta sem animais cadastrados", async () => {
+  const consoleSpy = jest.spyOn(console, "log").mockImplementation();
+  const { memoryDb, service } = createService();
+
+  await scheduleConsultation(memoryDb, service);
+
+  expect(consoleSpy).toHaveBeenCalledWith(
+    "Cadastre um animal antes de agendar um atendimento.",
+  );
+  expect(select).not.toHaveBeenCalled();
+  consoleSpy.mockRestore();
+});
+
+test("Rejeitar data de calendário inválida no utilitário", () => {
+  expect(parseFutureDate("2099-02-30 10:30")).toBe(
+    "Informe uma data e hora futuras válidas.",
+  );
+});
+
+test("Listar pets sem animais pelo utilitário", async () => {
+  const consoleSpy = jest.spyOn(console, "log").mockImplementation();
+  const { animalService } = createService();
+
+  await listPets(animalService, { animals: [] });
+
+  expect(consoleSpy).toHaveBeenCalledWith("Nenhum animal cadastrado.");
+  consoleSpy.mockRestore();
+});
+
+test("Listar consultas sem atendimentos pelo utilitário", () => {
+  const consoleSpy = jest.spyOn(console, "log").mockImplementation();
+
+  listConsultations({ schedules: [] });
+
+  expect(consoleSpy).toHaveBeenCalledWith("Nenhum atendimento registrado.");
+  consoleSpy.mockRestore();
+});
+
+test("Listar consultas registradas pelo utilitário", () => {
+  const animal = createAnimal();
+  const consoleSpy = jest.spyOn(console, "log").mockImplementation();
+
+  listConsultations({
+    schedules: [
+      {
+        animal,
+        type: "consulta de rotina",
+        date: new Date("2099-12-31T10:30:00"),
+        value: 100,
+      },
+    ],
+  });
+
+  expect(consoleSpy).toHaveBeenCalledWith(
+    expect.stringContaining("Caramelo | consulta de rotina"),
+  );
+  consoleSpy.mockRestore();
 });
 
 test("Registrar novo responsável", async () => {
