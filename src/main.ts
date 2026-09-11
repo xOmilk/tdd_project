@@ -70,6 +70,35 @@ async function listPets(
   }
 }
 
+function parseFutureDate(value: string): Date | string {
+  const match = /^(\d{4})-(\d{2})-(\d{2})\s+(\d{2}):(\d{2})$/.exec(
+    value.trim(),
+  );
+  if (!match) {
+    return "Informe a data no formato AAAA-MM-DD HH:mm.";
+  }
+
+  const [, year, month, day, hour, minute] = match;
+  const date = new Date(
+    Number(year),
+    Number(month) - 1,
+    Number(day),
+    Number(hour),
+    Number(minute),
+  );
+  const isValidDate =
+    date.getFullYear() === Number(year) &&
+    date.getMonth() === Number(month) - 1 &&
+    date.getDate() === Number(day) &&
+    date.getHours() === Number(hour) &&
+    date.getMinutes() === Number(minute);
+
+  if (!isValidDate || date <= new Date()) {
+    return "Informe uma data e hora futuras válidas.";
+  }
+  return date;
+}
+
 async function scheduleConsultation(
   db: { animals: Animal[] },
   scheduleService: ScheduleService,
@@ -106,11 +135,23 @@ async function scheduleConsultation(
         }),
       )
     : undefined;
+  const dateInput = await input({
+    message: "Data e hora do atendimento (AAAA-MM-DD HH:mm):",
+    validate: (value) => {
+      const date = parseFutureDate(value);
+      return date instanceof Date ? true : date;
+    },
+  });
+  const scheduleDate = parseFutureDate(dateInput);
+
+  if (!(scheduleDate instanceof Date)) {
+    return;
+  }
 
   const schedule: Schedule = await scheduleService.registerSchedule(
     animal,
     type,
-    new Date(),
+    scheduleDate,
     additionalValue,
   );
   console.log(
